@@ -1,0 +1,4 @@
+PYTHONIOENCODING=utf8
+MAILTO=vlcvi01@ca.com
+*/2 * * * *  /home/vlcvi01//joga/joga.sh  > /dev/null
+@weekly  echo "Joga summary" | mutt -a /home/vlcvi01/joga/joga-final.zip -s "joga overview" -- vitezslav+joga@vvvlcek.info > /dev/null
