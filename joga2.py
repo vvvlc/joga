@@ -35,16 +35,28 @@ def scrap_current_week_to_csv(outfile, now, cdate, append=False):
     #url = 'http://jogaandel.travelsoft.cz/?lokalita=chodov&typaktivity=' + aktivita + '&nazevaktivity=' + nazev
     #nastav chodov a kopiruj phpsessionid
     s = requests.session()
-    r = s.get("https://rezervace.dum-jogy.cz/rs/kalendar_vypis/zmena_mistnosti/4",verify=False)
-    
-    #url = 'http://rezervace.dum-jogy.cz/rs/kalendar_vypis/kalendar_vypis/2018-06-04/1'
-    url = 'https://rezervace.dum-jogy.cz/rs/kalendar_vypis/kalendar_vypis/'+cdate+'/1'
-    
-    #url = 'http://jogaandel.travelsoft.cz/?'+urllib.urlencode({"lokalita":"chodov", "typaktivity":aktivita, "nazevaktivity": nazev }, 1)
-    #url = 'http://jogaandel.travelsoft.cz/?'+urllib.urlencode({"lokalita":"chodov", "typaktivity":aktivita.decode("iso-8859-2"), "nazevaktivity": nazev.decode("iso-8859-2") }, 1)
-    #print url
-    r = s.get(url,verify=False)
-    soup = BeautifulSoup(r.text, 'html.parser')
+    exc=[]
+    for i in range(3):
+        try:
+            r = s.get("https://rezervace.dum-jogy.cz/rs/kalendar_vypis/zmena_mistnosti/4",verify=False)
+        
+            
+            #url = 'http://rezervace.dum-jogy.cz/rs/kalendar_vypis/kalendar_vypis/2018-06-04/1'
+            url = 'https://rezervace.dum-jogy.cz/rs/kalendar_vypis/kalendar_vypis/'+cdate+'/1'
+            
+            #url = 'http://jogaandel.travelsoft.cz/?'+urllib.urlencode({"lokalita":"chodov", "typaktivity":aktivita, "nazevaktivity": nazev }, 1)
+            #url = 'http://jogaandel.travelsoft.cz/?'+urllib.urlencode({"lokalita":"chodov", "typaktivity":aktivita.decode("iso-8859-2"), "nazevaktivity": nazev.decode("iso-8859-2") }, 1)
+            #print url
+            r = s.get(url,verify=False)
+            soup = BeautifulSoup(r.text, 'html.parser')
+            exc = []
+            break
+        except:
+            exc.append("Attempt: %d\n%s\n%s\n%s\n" % (i,*sys.exc_info()))
+
+    if len(exc)>0:
+        print("\n".join(exc))
+        raise ValueError(exc)
 
     akce={}
     #lekce    
@@ -55,12 +67,20 @@ def scrap_current_week_to_csv(outfile, now, cdate, append=False):
         akce['https://rezervace.dum-jogy.cz/rs/akce/tooltip/'+idakce]='t_'+idakce
         #akce['https://rezervace.dum-jogy.cz/rs/akce/zobrazit_akci/'+idakce]='a_'+idakce
 
-    pool = ThreadPoolExecutor(20)
-    #futures = [pool.submit(s.get,url,verify=False) for url in list(akce.keys())[1:5]]
-    futures = [pool.submit(s.get,url,verify=False) for url in akce.keys()]
-    akce=dict(((akce[r.result().url], r.result()) for r in as_completed(futures)))
-    #results = [r.result() for r in as_completed(futures)]
-    #akce=dict(((akce[r.url], r) for r in results))
+    exc=[]
+    for i in range(2):
+        try:
+            pool = ThreadPoolExecutor(20)
+            futures = [pool.submit(s.get,url,verify=False) for url in akce.keys()]
+            akce=dict(((akce[r.result().url], r.result()) for r in as_completed(futures)))
+            exc=[]
+            break
+        except:
+            exc.append("Attempt: %d\n%s\n%s\n%s\n" % (i,*sys.exc_info()))
+
+    if len(exc)>0:
+        print("\n".join(exc))
+        raise ValueError(exc)
 
     lekce_wrapper_pattern=r'lekce-wrapper-((\d{4})-(\d{2})-(\d{2}))'
     for day in soup.find_all('div',{'class':re.compile(lekce_wrapper_pattern)}):

@@ -23,6 +23,7 @@ fi
 cp joga_header.csv joga-editme.csv
 rm joga-final.zip
 zip joga-final.zip joga_header.csv
-#git commit -am "dataupdate"
+#git commit -am "dataupdate" --amend
+#git gc
 #heath check
 wget https://hchk.io/1d687bb2-cbe4-4ef7-b079-21cd264298e6 -q -O /dev/null || echo Health check success reporting failed  
